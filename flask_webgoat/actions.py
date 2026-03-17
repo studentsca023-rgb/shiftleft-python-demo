@@ -24,6 +24,16 @@ def log_entry():
     if text_param is None:
         return jsonify({"error": "text parameter is required"})
 
+    # Limit text size to prevent disk space exhaustion (max 10KB)
+    MAX_TEXT_SIZE = 10 * 1024
+    if len(text_param) > MAX_TEXT_SIZE:
+        return jsonify({"error": f"text exceeds maximum allowed size of {MAX_TEXT_SIZE} bytes"})
+
+    # Sanitize text: only allow printable ASCII and common whitespace
+    sanitized_text = "".join(
+        c for c in text_param if c.isprintable() or c in "\n\r\t"
+    )
+
     user_id = user_info[0]
     user_dir = "data/" + str(user_id)
     user_dir_path = Path(user_dir)
@@ -33,7 +43,7 @@ def log_entry():
     filename = secure_filename(filename_param) + ".txt"
     path = Path(user_dir) / filename
     with path.open("w", encoding="utf-8") as open_file:
-        open_file.write(text_param)
+        open_file.write(sanitized_text)
     return jsonify({"success": True})
 
 

@@ -1,12 +1,6 @@
-from urllib.parse import urlparse
-from flask import Blueprint, request, jsonify, session, redirect
+from flask import Blueprint, request, jsonify, session, redirect, url_for
 from . import query_db
 
-
-def is_safe_url(url):
-    """Check if URL is safe for redirect (relative URL only)."""
-    parsed = urlparse(url)
-    return not parsed.netloc and not parsed.scheme
 
 bp = Blueprint("auth", __name__)
 
@@ -33,11 +27,10 @@ def login():
 def login_and_redirect():
     username = request.args.get("username")
     password = request.args.get("password")
-    url = request.args.get("url")
-    if username is None or password is None or url is None:
+    if username is None or password is None:
         return (
             jsonify(
-                {"error": "username, password, and url parameters have to be provided"}
+                {"error": "username and password parameters have to be provided"}
             ),
             400,
         )
@@ -45,8 +38,6 @@ def login_and_redirect():
     query = "SELECT id, username, access_level FROM user WHERE username = ? AND password = ?"
     result = query_db(query, (username, password), True)
     if result is None:
-        if not is_safe_url(url):
-            return jsonify({"error": "Invalid redirect URL"}), 400
-        return redirect(url)
+        return redirect(url_for("home.home"))
     session["user_info"] = (result[0], result[1], result[2])
-    return jsonify({"success": True})
+    return redirect(url_for("home.home"))

@@ -42,11 +42,16 @@ def login_and_redirect():
             400,
         )
 
+    parsed = urlparse(url)
+    if parsed.netloc or parsed.scheme:
+        return jsonify({"error": "Invalid redirect URL"}), 400
+    safe_url = parsed.path
+    if parsed.query:
+        safe_url = f"{safe_url}?{parsed.query}"
+
     query = "SELECT id, username, access_level FROM user WHERE username = ? AND password = ?"
     result = query_db(query, (username, password), True)
     if result is None:
-        if not is_safe_url(url):
-            return jsonify({"error": "Invalid redirect URL"}), 400
-        return redirect(url)
+        return redirect(safe_url)
     session["user_info"] = (result[0], result[1], result[2])
     return jsonify({"success": True})

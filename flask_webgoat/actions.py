@@ -37,27 +37,35 @@ def log_entry():
     return jsonify({"success": True})
 
 
-@bp.route("/grep_processes")
-def grep_processes():
-    name = request.args.get("name")
-    # Fixed: avoid shell=True to prevent command injection
+def _get_process_list():
+    """Get process list. No user input is passed to this function."""
     res = subprocess.run(
         ["ps", "aux"],
         capture_output=True,
     )
-    if res.stdout is None:
+    return res.stdout
+
+
+@bp.route("/grep_processes")
+def grep_processes():
+    name = request.args.get("name")
+    if name is None:
+        return jsonify({"error": "name parameter is required"})
+
+    stdout = _get_process_list()
+    if stdout is None:
         return jsonify({"error": "no stdout returned"})
 
-    out = res.stdout.decode("utf-8")
+    out = stdout.decode("utf-8")
     lines = out.split("\n")
 
-    # Filter lines containing the name and extract the 11th column (command)
+    # Filter lines in pure Python (no shell involvement)
     names = []
     for line in lines:
         if name in line:
             parts = line.split()
             if len(parts) >= 11:
-                names.append(parts[10])  # 0-indexed, so 11th column is index 10
+                names.append(parts[10])
 
     return jsonify({"success": True, "names": names})
 

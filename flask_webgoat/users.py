@@ -34,6 +34,7 @@ def create_user():
             402,
         )
 
+    # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query
     query = "INSERT INTO user (username, password, access_level) VALUES (?, ?, ?)"
 
     try:

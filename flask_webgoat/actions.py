@@ -40,10 +40,7 @@ def log_entry():
 @bp.route("/grep_processes")
 def grep_processes():
     name = request.args.get("name")
-    if name is None:
-        return jsonify({"error": "name parameter is required"})
-
-    # Run ps aux without shell=True to prevent command injection
+    # Fixed: avoid shell=True to prevent command injection
     res = subprocess.run(
         ["ps", "aux"],
         capture_output=True,
